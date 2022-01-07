@@ -245,6 +245,7 @@ func (d *curlftpfsDriver) Capabilities(r volume.Request) volume.Response {
 
 func (d *curlftpfsDriver) mountVolume(v *curlftpfsVolume) error {
 	cmd := exec.Command("curlftpfs")
+	cmd.Args = append(cmd.args, "-o no_verify_peer -o no_verify_hostname -o ssl_try -o enable_epsv")
 	cmd.Args = append(cmd.Args, "-o", "allow_other")
 	if v.Credentials != "" {
 		cmd.Args = append(cmd.Args, "-o", "user=" + v.Credentials)
