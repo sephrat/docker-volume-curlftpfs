@@ -14,7 +14,7 @@ Adapted from vieux/sshfs
 1 - Install the plugin
 
 ```
-$ docker plugin install g-eos/curlftpfs:next # or docker plugin install valuya/curlftpfs:next DEBUG=1
+$ docker plugin install g-eos/curlftpfs:next # or docker plugin install g-eos/curlftpfs:next DEBUG=1
 ```
 
 2 - Create a volume
@@ -54,8 +54,9 @@ Make sure to add the nocopy option to your mount description.
 
 ## THANKS
 
-https://github.com/docker/go-plugins-helpers
-Thanks to Valuya/docker-volume-curlftpfs : https://github.com/Valuya/docker-volume-curlftpfs
+- https://github.com/docker/go-plugins-helpers
+
+- Thanks to Valuya/docker-volume-curlftpfs : https://github.com/Valuya/docker-volume-curlftpfs
 
 ## LICENSE
 
