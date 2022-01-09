@@ -245,7 +245,7 @@ func (d *curlftpfsDriver) Capabilities(r volume.Request) volume.Response {
 
 func (d *curlftpfsDriver) mountVolume(v *curlftpfsVolume) error {
 	cmd := exec.Command("curlftpfs")
-	cmd.Args = append(cmd.args, "-o no_verify_peer -o no_verify_hostname -o ssl_try -o enable_epsv")
+	cmd.Args = append(cmd.Args, "-o no_verify_peer -o no_verify_hostname -o ssl_try -o enable_epsv")
 	cmd.Args = append(cmd.Args, "-o", "allow_other")
 	if v.Credentials != "" {
 		cmd.Args = append(cmd.Args, "-o", "user=" + v.Credentials)
@@ -261,7 +261,12 @@ func (d *curlftpfsDriver) mountVolume(v *curlftpfsVolume) error {
 	}
 	cmd.Args = append(cmd.Args, v.Address, v.HostMountpoint)
 	logrus.Debug(cmd.Args)
-	return cmd.Run()
+	//return cmd.Run()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return logError("sshfs command execute failed: %v (%s)", err, output)
+	}
+	return nil
 }
 
 func (d *curlftpfsDriver) unmountVolume(target string) error {
@@ -273,6 +278,12 @@ func (d *curlftpfsDriver) unmountVolume(target string) error {
 func responseError(err string) volume.Response {
 	logrus.Error(err)
 	return volume.Response{Err: err}
+}
+
+
+func logError(format string, args ...interface{}) error {
+	logrus.Errorf(format, args...)
+	return fmt.Errorf(format, args...)
 }
 
 func main() {
