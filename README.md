@@ -14,13 +14,13 @@ Adapted from vieux/sshfs
 1 - Install the plugin
 
 ```
-$ docker plugin install g-eos/curlftpfs:next # or docker plugin install g-eos/curlftpfs:next DEBUG=1
+$ docker plugin install geos2/curlftpfs:next # or docker plugin install g-eos/curlftpfs:next DEBUG=1
 ```
 
 2 - Create a volume
 
 ```
-$ docker volume create -d g-eos/curlftpfs:next -o address=<ip:port> -o credentials=<user:password> ftpvolume
+$ docker volume create -d geos2/curlftpfs:next -o address=<ip:port> -o credentials=<user:password> ftpvolume
 ftpvolume
 $ docker volume ls
 DRIVER              VOLUME NAME
@@ -33,7 +33,7 @@ g-eos/curlftpfs    ftpvolume
 
 or
 # See curlftps man for all the options you can use. next line activate ftps (and do not very any certificate)
-$ docker volume create -d g-eos/curlftpfs:next -o address=<ip:port> -o credentials=<user:password> -o no_verify_peer -o no_verify_hostname -o ssl_try -o enable_epsv ftpvolume
+$ docker volume create -d geos2/curlftpfs:next -o address=<ip:port> -o credentials=<user:password> -o no_verify_peer -o no_verify_hostname -o ssl_try -o enable_epsv ftpvolume
 
 ```
 
