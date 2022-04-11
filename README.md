@@ -14,7 +14,10 @@ Adapted from vieux/sshfs
 1 - Install the plugin
 
 ```
-$ docker plugin install geos2/curlftpfs:next # or docker plugin install g-eos/curlftpfs:next DEBUG=1
+$ docker plugin install geos2/curlftpfs:next
+
+# or to enable debug
+docker plugin install geos2/curlftpfs:next DEBUG=1
 ```
 
 2 - Create a volume
