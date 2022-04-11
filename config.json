@@ -37,6 +37,18 @@
       ],
       "source": "/var/lib/docker/plugins/",
       "type": "bind"
+    },
+    {
+      "destination": "/root/.netrc",
+      "options": [
+        "rbind"
+      ],
+      "name": "netrc",
+      "source": "",
+      "settable": [
+        "source"
+      ],
+      "type": "bind"
     }
   ],
   "network": {
