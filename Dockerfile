@@ -1,11 +1,11 @@
-FROM golang:1.10-alpine as builder
-COPY . /go/src/github.com/G-eos/docker-volume-curlftpfs
-WORKDIR /go/src/github.com/G-eos/docker-volume-curlftpfs
+FROM golang:1.10-stretch as builder
+COPY . /go/src/github.com/valuya/docker-volume-curlftpfs
+WORKDIR /go/src/github.com/valuya/docker-volume-curlftpfs
 RUN set -ex \
-    && apk add --no-cache --virtual .build-deps \
-    gcc libc-dev \
-    && go install --ldflags '-extldflags "-static"' \
-    && apk del .build-deps
+    && apt-get install \
+        gcc libc-dev \
+    && go install --ldflags '-extldflags "-static"'
+
 CMD ["/go/bin/docker-volume-curlftpfs"]
 
 FROM debian:stable-slim
