@@ -1,6 +1,6 @@
 FROM golang:1.10-stretch as builder
-COPY . /go/src/github.com/valuya/docker-volume-curlftpfs
-WORKDIR /go/src/github.com/valuya/docker-volume-curlftpfs
+COPY . /go/src/github.com/g-eos/docker-volume-curlftpfs
+WORKDIR /go/src/github.com/g-eos/docker-volume-curlftpfs
 RUN set -ex \
     && apt-get install \
         gcc libc-dev \

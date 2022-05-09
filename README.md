@@ -1,6 +1,6 @@
 # Warning
 
-This fork prupose is to add tha capibility to pass options to curlftps.
+This fork prupose is to add the capibility to pass options to curlftps.
 Please note that it depends on old software packages (not updated) and is not maintained enough for usage in production. (but it works pretty well :))
 
 # Docker volume plugin for curlftpfs
