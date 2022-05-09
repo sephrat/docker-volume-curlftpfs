@@ -15,6 +15,9 @@ Adapted from vieux/sshfs
 
 ```
 $ docker plugin install geos2/curlftpfs:next # or docker plugin install g-eos/curlftpfs:next DEBUG=1
+
+# or to change where plugin .netrc is stored
+docker plugin install geos2/curlftpfs:next netrc.source=<any_file_path>
 ```
 
 2 - Create a volume
