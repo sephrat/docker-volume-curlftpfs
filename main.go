@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/volume"
@@ -24,6 +25,7 @@ type curlftpfsVolume struct {
 	Uid			     string
 	Gid			     string
 	Umask			 string
+	Options	string
 	HostMountpoint   string
 	PluginMountpoint string
 	connections      int
@@ -97,6 +99,8 @@ func (d *curlftpfsDriver) Create(r volume.Request) volume.Response {
 			v.Gid= val
 		case "umask":
 			v.Umask= val
+		case "options":
+			v.Options= val
 		default:
 			return responseError(fmt.Sprintf("unknown option %q", val))
 		}
@@ -155,7 +159,6 @@ func (d *curlftpfsDriver) Path(r volume.Request) volume.Response {
 
 func (d *curlftpfsDriver) Mount(r volume.MountRequest) volume.Response {
 	logrus.WithField("method", "mount").Debugf("%#v", r)
-
 	d.Lock()
 	defer d.Unlock()
 
@@ -258,6 +261,12 @@ func (d *curlftpfsDriver) mountVolume(v *curlftpfsVolume) error {
 	if v.Umask!= "" {
 		cmd.Args = append(cmd.Args, "-o", "umask=" + v.Umask)
 	}
+	if v.Options!= "" {
+		for _, option := range strings.Split(v.Options, ",") {
+	                cmd.Args = append(cmd.Args, "-o", option)
+		}
+        }
+
 	cmd.Args = append(cmd.Args, v.Address, v.HostMountpoint)
 	logrus.Debug(cmd.Args)
 	return cmd.Run()

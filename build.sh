@@ -19,8 +19,10 @@ docker export pluginbuild | tar -x -C rootfs
 cp config.json rootfs/
 docker stop pluginbuild
 docker rm pluginbuild
+docker plugin disable "${PLUGIN_NAME}":"${PLUGIN_TAG}" || echo "."
 docker plugin rm "${PLUGIN_NAME}":"${PLUGIN_TAG}" || echo "."
 docker plugin create "${PLUGIN_NAME}":"${PLUGIN_TAG}" .
+docker plugin enable "${PLUGIN_NAME}":"${PLUGIN_TAG}"
 rm -rf rootfs
 rm -rf docker-volume-curlftpfs
 docker rmi "${PLUGIN_NAME}":rootfs
