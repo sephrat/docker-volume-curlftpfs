@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/volume"
@@ -101,8 +100,6 @@ func (d *curlftpfsDriver) Create(r *volume.CreateRequest) error {
 			v.Gid= val
 		case "umask":
 			v.Umask= val
-		case "options":
-			v.Options= val
 		default:
 			if val != "" {
 				v.Options = append(v.Options, key+"="+val)
