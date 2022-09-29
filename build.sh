@@ -1,5 +1,5 @@
 PLUGIN_NAME='sephrat/curlftpfs'
-PLUGIN_TAG='2'
+PLUGIN_TAG='1'
 
 rm -rf rootfs
 docker rm curlftpfsbuild || echo "."
