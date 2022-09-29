@@ -10,7 +10,7 @@
       "settable": [
         "value"
       ],
-      "value": "1"
+      "value": "0"
     }
   ],
   "interface": {
@@ -36,6 +36,18 @@
         "rbind"
       ],
       "source": "/var/lib/docker/plugins/",
+      "type": "bind"
+    },
+    {
+      "destination": "/root/.netrc",
+      "options": [
+        "rbind"
+      ],
+      "name": "netrc",
+      "source": "",
+      "settable": [
+        "source"
+      ],
       "type": "bind"
     }
   ],

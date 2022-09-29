@@ -22,10 +22,12 @@ const socketAddress = "/run/docker/plugins/curlftpfs.sock"
 type curlftpfsVolume struct {
 	Address          string
 	Credentials      string
-	Uid			     string
-	Gid			     string
-	Umask			 string
-	Options	string
+	Uid		string
+	Gid		string
+	Umask		string
+
+	Options []string
+
 	HostMountpoint   string
 	PluginMountpoint string
 	connections      int
@@ -76,7 +78,7 @@ func (d *curlftpfsDriver) saveState() {
 	}
 }
 
-func (d *curlftpfsDriver) Create(r volume.Request) volume.Response {
+func (d *curlftpfsDriver) Create(r *volume.CreateRequest) error {
 	logrus.WithField("method", "create").Debugf("%#v", r)
 
 	d.Lock()
@@ -102,12 +104,16 @@ func (d *curlftpfsDriver) Create(r volume.Request) volume.Response {
 		case "options":
 			v.Options= val
 		default:
-			return responseError(fmt.Sprintf("unknown option %q", val))
+			if val != "" {
+				v.Options = append(v.Options, key+"="+val)
+			} else {
+				v.Options = append(v.Options, key)
+			}
 		}
 	}
 
 	if v.Address == "" {
-		return responseError("'address' option required")
+		return logError("'address' option required")
 	}
 
 	hash:= md5.Sum([]byte(v.Address + v.Credentials))
@@ -118,10 +124,10 @@ func (d *curlftpfsDriver) Create(r volume.Request) volume.Response {
 
 	d.saveState()
 
-	return volume.Response{}
+	return nil
 }
 
-func (d *curlftpfsDriver) Remove(r volume.Request) volume.Response {
+func (d *curlftpfsDriver) Remove(r *volume.RemoveRequest) error {
 	logrus.WithField("method", "remove").Debugf("%#v", r)
 
 	d.Lock()
@@ -129,21 +135,21 @@ func (d *curlftpfsDriver) Remove(r volume.Request) volume.Response {
 
 	v, ok := d.volumes[r.Name]
 	if !ok {
-		return responseError(fmt.Sprintf("volume %s not found", r.Name))
+		return logError("volume %s not found", r.Name)
 	}
 
 	if v.connections != 0 {
-		return responseError(fmt.Sprintf("volume %s is currently used by a container", r.Name))
+		return logError("volume %s is currently used by a container", r.Name)
 	}
 	if err := os.RemoveAll(v.HostMountpoint); err != nil {
-		return responseError(err.Error())
+		return logError(err.Error())
 	}
 	delete(d.volumes, r.Name)
 	d.saveState()
-	return volume.Response{}
+	return nil
 }
 
-func (d *curlftpfsDriver) Path(r volume.Request) volume.Response {
+func (d *curlftpfsDriver) Path(r *volume.PathRequest) (*volume.PathResponse, error) {
 	logrus.WithField("method", "path").Debugf("%#v", r)
 
 	d.RLock()
@@ -151,69 +157,69 @@ func (d *curlftpfsDriver) Path(r volume.Request) volume.Response {
 
 	v, ok := d.volumes[r.Name]
 	if !ok {
-		return responseError(fmt.Sprintf("volume %s not found", r.Name))
+		return &volume.PathResponse{}, logError("volume %s not found", r.Name)
 	}
 
-	return volume.Response{Mountpoint: v.PluginMountpoint}
+	return &volume.PathResponse{Mountpoint: v.PluginMountpoint}, nil
 }
 
-func (d *curlftpfsDriver) Mount(r volume.MountRequest) volume.Response {
+func (d *curlftpfsDriver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) {
 	logrus.WithField("method", "mount").Debugf("%#v", r)
 	d.Lock()
 	defer d.Unlock()
 
 	v, ok := d.volumes[r.Name]
 	if !ok {
-		return responseError(fmt.Sprintf("volume %s not found", r.Name))
+		return &volume.MountResponse{}, logError("volume %s not found", r.Name)
 	}
 
 	if v.connections == 0 {
 		fi, err := os.Lstat(v.HostMountpoint)
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(v.HostMountpoint, 0755); err != nil {
-				return responseError(err.Error())
+				return &volume.MountResponse{}, logError(err.Error())
 			}
 		} else if err != nil {
-			return responseError(err.Error())
+			return &volume.MountResponse{}, logError(err.Error())
 		}
 
 		if fi != nil && !fi.IsDir() {
-			return responseError(fmt.Sprintf("%v already exist and it's not a directory", v.HostMountpoint))
+			return &volume.MountResponse{}, logError("%v already exist and it's not a directory", v.HostMountpoint)
 		}
 
 		if err := d.mountVolume(v); err != nil {
-			return responseError(err.Error())
+			return &volume.MountResponse{}, logError(err.Error())
 		}
 	}
 
 	v.connections++
 
-	return volume.Response{Mountpoint: v.PluginMountpoint}
+	return &volume.MountResponse{Mountpoint: v.PluginMountpoint}, nil
 }
 
-func (d *curlftpfsDriver) Unmount(r volume.UnmountRequest) volume.Response {
+func (d *curlftpfsDriver) Unmount(r *volume.UnmountRequest) error {
 	logrus.WithField("method", "unmount").Debugf("%#v", r)
 
 	d.Lock()
 	defer d.Unlock()
 	v, ok := d.volumes[r.Name]
 	if !ok {
-		return responseError(fmt.Sprintf("volume %s not found", r.Name))
+		return logError("volume %s not found", r.Name)
 	}
 
 	v.connections--
 
 	if v.connections <= 0 {
 		if err := d.unmountVolume(v.HostMountpoint); err != nil {
-			return responseError(err.Error())
+			return logError(err.Error())
 		}
 		v.connections = 0
 	}
 
-	return volume.Response{}
+	return nil
 }
 
-func (d *curlftpfsDriver) Get(r volume.Request) volume.Response {
+func (d *curlftpfsDriver) Get(r *volume.GetRequest) (*volume.GetResponse, error) {
 	logrus.WithField("method", "get").Debugf("%#v", r)
 
 	d.Lock()
@@ -221,14 +227,14 @@ func (d *curlftpfsDriver) Get(r volume.Request) volume.Response {
 
 	v, ok := d.volumes[r.Name]
 	if !ok {
-		return responseError(fmt.Sprintf("volume %s not found", r.Name))
+		return &volume.GetResponse{}, logError("volume %s not found", r.Name)
 	}
 
-	return volume.Response{Volume: &volume.Volume{Name: r.Name, Mountpoint: v.PluginMountpoint}}
+	return &volume.GetResponse{Volume: &volume.Volume{Name: r.Name, Mountpoint: v.PluginMountpoint}}, nil
 }
 
-func (d *curlftpfsDriver) List(r volume.Request) volume.Response {
-	logrus.WithField("method", "list").Debugf("%#v", r)
+func (d *curlftpfsDriver) List() (*volume.ListResponse, error) {
+	logrus.WithField("method", "list").Debugf("")
 
 	d.Lock()
 	defer d.Unlock()
@@ -237,13 +243,13 @@ func (d *curlftpfsDriver) List(r volume.Request) volume.Response {
 	for name, v := range d.volumes {
 		vols = append(vols, &volume.Volume{Name: name, Mountpoint: v.PluginMountpoint})
 	}
-	return volume.Response{Volumes: vols}
+	return &volume.ListResponse{Volumes: vols}, nil
 }
 
-func (d *curlftpfsDriver) Capabilities(r volume.Request) volume.Response {
-	logrus.WithField("method", "capabilities").Debugf("%#v", r)
+func (d *curlftpfsDriver) Capabilities() *volume.CapabilitiesResponse {
+	logrus.WithField("method", "capabilities").Debugf("")
 
-	return volume.Response{Capabilities: volume.Capability{Scope: "local"}}
+	return &volume.CapabilitiesResponse{Capabilities: volume.Capability{Scope: "local"}}
 }
 
 func (d *curlftpfsDriver) mountVolume(v *curlftpfsVolume) error {
@@ -261,15 +267,16 @@ func (d *curlftpfsDriver) mountVolume(v *curlftpfsVolume) error {
 	if v.Umask!= "" {
 		cmd.Args = append(cmd.Args, "-o", "umask=" + v.Umask)
 	}
-	if v.Options!= "" {
-		for _, option := range strings.Split(v.Options, ",") {
-	                cmd.Args = append(cmd.Args, "-o", option)
-		}
+	for _, option := range v.Options {
+               cmd.Args = append(cmd.Args, "-o", option)
         }
-
 	cmd.Args = append(cmd.Args, v.Address, v.HostMountpoint)
 	logrus.Debug(cmd.Args)
-	return cmd.Run()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return logError("curlftpfs command execute failed: %v (%s)", err, output)
+	}
+	return nil
 }
 
 func (d *curlftpfsDriver) unmountVolume(target string) error {
@@ -278,9 +285,9 @@ func (d *curlftpfsDriver) unmountVolume(target string) error {
 	return exec.Command("sh", "-c", cmd).Run()
 }
 
-func responseError(err string) volume.Response {
-	logrus.Error(err)
-	return volume.Response{Err: err}
+func logError(format string, args ...interface{}) error {
+	logrus.Errorf(format, args...)
+	return fmt.Errorf(format, args...)
 }
 
 func main() {
@@ -294,7 +301,6 @@ func main() {
 		log.Fatal(err)
 	}
 	h := volume.NewHandler(d)
-
 	logrus.Infof("listening on %s", socketAddress)
 	logrus.Error(h.ServeUnix(socketAddress, 0))
 }
